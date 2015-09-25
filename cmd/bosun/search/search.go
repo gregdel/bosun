@@ -2,6 +2,7 @@ package search // import "bosun.org/cmd/bosun/search"
 
 import (
 	"fmt"
+	"reflect"
 	"regexp"
 	"sort"
 	"strings"
@@ -10,6 +11,7 @@ import (
 
 	"bosun.org/cmd/bosun/database"
 	"bosun.org/opentsdb"
+	"bosun.org/slog"
 )
 
 // Search is a struct to hold indexed data about OpenTSDB metric and tag data.
@@ -72,15 +74,29 @@ func (s *Search) Index(mdp opentsdb.MultiDataPoint) {
 			s.Last[key] = p
 		}
 		if p.timestamp < dp.Timestamp {
-			if fv, ok := dp.Value.(float64); ok {
-				p.diffFromPrev = fv - p.lastVal
+			if fv, err := getFloat(dp.Value); err == nil {
+				p.diffFromPrev = (fv - p.lastVal) / float64(dp.Timestamp-p.timestamp)
 				p.lastVal = fv
+			} else {
+				slog.Error(err)
 			}
 			p.timestamp = dp.Timestamp
 		}
 		s.Unlock()
 	}
 
+}
+
+var floatType = reflect.TypeOf(float64(0))
+
+func getFloat(unk interface{}) (float64, error) {
+	v := reflect.ValueOf(unk)
+	v = reflect.Indirect(v)
+	if !v.Type().ConvertibleTo(floatType) {
+		return 0, fmt.Errorf("cannot convert %v to float64", v.Type())
+	}
+	fv := v.Convert(floatType)
+	return fv.Float(), nil
 }
 
 // Match returns all matching values against search. search is a regex, except
@@ -168,11 +184,11 @@ func (s *Search) TagValuesByTagKey(Tagk string, since time.Duration) ([]string, 
 }
 
 func (s *Search) MetricsByTagPair(tagk, tagv string) ([]string, error) {
-	r := make([]string, 0)
 	metrics, err := s.DataAccess.Search_GetMetricsForTag(tagk, tagv)
 	if err != nil {
 		return nil, err
 	}
+	r := []string{}
 	for k, _ := range metrics {
 		r = append(r, k)
 	}
@@ -185,7 +201,7 @@ func (s *Search) TagKeysByMetric(metric string) ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	r := make([]string, len(keys))
+	r := []string{}
 	for k := range keys {
 		r = append(r, k)
 	}

@@ -68,7 +68,12 @@ func StartLedis(dataDir string, bind string) (stop func(), err error) {
 	return app.Close, nil
 }
 
-func (d *dataAccess) getConnection() redis.Conn {
+//interface so things can get a raw connection (mostly tests), but still discourage it.
+type Connector interface {
+	GetConnection() redis.Conn
+}
+
+func (d *dataAccess) GetConnection() redis.Conn {
 	return d.pool.Get()
 }
 
