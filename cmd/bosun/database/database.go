@@ -24,6 +24,9 @@ type DataAccess interface {
 	PutTagMetadata(tags opentsdb.TagSet, name string, value string, updated time.Time) error
 	GetTagMetadata(tags opentsdb.TagSet, name string) ([]*TagMetadata, error)
 	DeleteTagMetadata(tags opentsdb.TagSet, name string) error
+
+	AddMetricForTag(tagK, tagV, metric string, time int64) error
+	GetMetricsForTag(tagK, tagV string) (map[string]int64, error)
 }
 
 type dataAccess struct {

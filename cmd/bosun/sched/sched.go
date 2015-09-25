@@ -76,7 +76,6 @@ func (s *Schedule) Init(c *conf.Conf) error {
 	s.Incidents = make(map[uint64]*Incident)
 	s.pendingUnknowns = make(map[*conf.Notification][]*State)
 	s.status = make(States)
-	s.Search = search.NewSearch()
 	s.LastCheck = time.Now()
 	s.ctx = &checkContext{time.Now(), cache.New(0)}
 	if s.DataAccess == nil {
@@ -91,6 +90,7 @@ func (s *Schedule) Init(c *conf.Conf) error {
 			s.DataAccess = database.NewDataAccess(bind, false)
 		}
 	}
+	s.Search = search.NewSearch(s.DataAccess)
 	if c.StateFile != "" {
 		s.db, err = bolt.Open(c.StateFile, 0600, nil)
 		if err != nil {

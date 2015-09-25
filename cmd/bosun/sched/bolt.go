@@ -43,7 +43,6 @@ func (c *counterWriter) Write(p []byte) (n int, err error) {
 const (
 	dbBucket           = "bindata"
 	dbConfigTextBucket = "configText"
-	dbMetric           = "metric"
 	dbTagk             = "tagk"
 	dbTagv             = "tagv"
 	dbNotifications    = "notifications"
@@ -59,7 +58,6 @@ func (s *Schedule) save() {
 	}
 	s.Lock("Save")
 	store := map[string]interface{}{
-		dbMetric:        s.Search.Read.Metric,
 		dbTagk:          s.Search.Read.Tagk,
 		dbTagv:          s.Search.Read.Tagv,
 		dbNotifications: s.Notifications,
@@ -149,9 +147,10 @@ func (s *Schedule) RestoreState() error {
 	s.Notifications = nil
 	db := s.db
 
-	if err := decode(db, dbMetric, &s.Search.Metric); err != nil {
-		slog.Errorln(dbMetric, err)
-	}
+	//Todo: convert "metric"
+	//	if err := decode(db, dbMetric, &s.Search.Metric); err != nil {
+	//		slog.Errorln(dbMetric, err)
+	//	}
 	if err := decode(db, dbTagk, &s.Search.Tagk); err != nil {
 		slog.Errorln(dbTagk, err)
 	}

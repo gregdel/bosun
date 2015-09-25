@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"bosun.org/cmd/bosun/database"
 	"bosun.org/opentsdb"
 )
 
@@ -16,8 +17,8 @@ import (
 // available tag keys for a metric, and available tag values for a metric and
 // tag key.
 type Search struct {
-	// tagk + tagv -> metrics
-	Metric qmap
+	DataAccess database.DataAccess
+
 	// metric -> tag keys
 	Tagk smap
 	// metric + tagk -> tag values
@@ -87,13 +88,13 @@ func (p present) Copy() present {
 	return m
 }
 
-func NewSearch() *Search {
+func NewSearch(data database.DataAccess) *Search {
 	s := Search{
-		Metric: make(qmap),
-		Tagk:   make(smap),
-		Tagv:   make(qmap),
-		Last:   make(map[string]*pair),
-		Read:   new(Search),
+		DataAccess: data,
+		Tagk:       make(smap),
+		Tagv:       make(qmap),
+		Last:       make(map[string]*pair),
+		Read:       new(Search),
 	}
 	return &s
 }
@@ -101,7 +102,6 @@ func NewSearch() *Search {
 // Copy copies current data to the Read replica.
 func (s *Search) Copy() {
 	r := new(Search)
-	r.Metric = s.Metric.Copy()
 	r.Tagk = s.Tagk.Copy()
 	r.Tagv = s.Tagv.Copy()
 	s.Read = r
@@ -127,11 +127,8 @@ func (s *Search) Index(mdp opentsdb.MultiDataPoint) {
 		key := mts.key()
 		var q duple
 		for k, v := range dp.Tags {
-			q.A, q.B = k, v
-			if _, ok := s.Metric[q]; !ok {
-				s.Metric[q] = make(present)
-			}
-			s.Metric[q][dp.Metric] = now
+
+			s.DataAccess.AddMetricForTag(k, v, dp.Metric, now)
 
 			if _, ok := s.Tagk[dp.Metric]; !ok {
 				s.Tagk[dp.Metric] = make(present)
@@ -261,13 +258,17 @@ func (s *Search) TagValuesByTagKey(Tagk string, since time.Duration) []string {
 	return tagvs
 }
 
-func (s *Search) MetricsByTagPair(Tagk, Tagv string) []string {
+func (s *Search) MetricsByTagPair(Tagk, Tagv string) ([]string, error) {
 	r := make([]string, 0)
-	for k := range s.Read.Metric[duple{Tagk, Tagv}] {
+	metrics, err := s.DataAccess.GetMetricsForTag(Tagk, Tagv)
+	if err != nil {
+		return nil, err
+	}
+	for k, _ := range metrics {
 		r = append(r, k)
 	}
 	sort.Strings(r)
-	return r
+	return r, nil
 }
 
 func (s *Search) TagKeysByMetric(Metric string) []string {
