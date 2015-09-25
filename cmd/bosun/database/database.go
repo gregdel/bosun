@@ -25,8 +25,17 @@ type DataAccess interface {
 	GetTagMetadata(tags opentsdb.TagSet, name string) ([]*TagMetadata, error)
 	DeleteTagMetadata(tags opentsdb.TagSet, name string) error
 
-	AddMetricForTag(tagK, tagV, metric string, time int64) error
-	GetMetricsForTag(tagK, tagV string) (map[string]int64, error)
+	Search_AddMetricForTag(tagK, tagV, metric string, time int64) error
+	Search_GetMetricsForTag(tagK, tagV string) (map[string]int64, error)
+
+	Search_AddTagKeyForMetric(metric, tagK string, time int64) error
+	Search_GetTagKeysForMetric(metric string) (map[string]int64, error)
+
+	Search_AddMetric(metric string, time int64) error
+	Search_GetAllMetrics() (map[string]int64, error)
+
+	Search_AddTagValue(metric, tagK, tagV string, time int64) error
+	Search_GetTagValues(metric, tagK string) (map[string]int64, error)
 }
 
 type dataAccess struct {

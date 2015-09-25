@@ -43,8 +43,6 @@ func (c *counterWriter) Write(p []byte) (n int, err error) {
 const (
 	dbBucket           = "bindata"
 	dbConfigTextBucket = "configText"
-	dbTagk             = "tagk"
-	dbTagv             = "tagv"
 	dbNotifications    = "notifications"
 	dbSilence          = "silence"
 	dbStatus           = "status"
@@ -58,8 +56,6 @@ func (s *Schedule) save() {
 	}
 	s.Lock("Save")
 	store := map[string]interface{}{
-		dbTagk:          s.Search.Read.Tagk,
-		dbTagv:          s.Search.Read.Tagv,
 		dbNotifications: s.Notifications,
 		dbSilence:       s.Silence,
 		dbStatus:        s.status,
@@ -151,12 +147,14 @@ func (s *Schedule) RestoreState() error {
 	//	if err := decode(db, dbMetric, &s.Search.Metric); err != nil {
 	//		slog.Errorln(dbMetric, err)
 	//	}
-	if err := decode(db, dbTagk, &s.Search.Tagk); err != nil {
-		slog.Errorln(dbTagk, err)
-	}
-	if err := decode(db, dbTagv, &s.Search.Tagv); err != nil {
-		slog.Errorln(dbTagv, err)
-	}
+	//TODO: convert "tagk"
+	//	if err := decode(db, dbTagk, &s.Search.Tagk); err != nil {
+	//		slog.Errorln(dbTagk, err)
+	//	}
+	//TODO: convert "tagv"
+	//	if err := decode(db, dbTagv, &s.Search.Tagv); err != nil {
+	//		slog.Errorln(dbTagv, err)
+	//	}
 	notifications := make(map[expr.AlertKey]map[string]time.Time)
 	if err := decode(db, dbNotifications, &notifications); err != nil {
 		slog.Errorln(dbNotifications, err)
@@ -239,7 +237,6 @@ func (s *Schedule) RestoreState() error {
 	migrateOldDataToRedis(db, s.DataAccess)
 	// delete metrictags if they exist.
 	deleteKey(s.db, "metrictags")
-	s.Search.Copy()
 	slog.Infoln("RestoreState done in", time.Since(start))
 	return nil
 }
