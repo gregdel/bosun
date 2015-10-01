@@ -32,6 +32,7 @@ const (
 // Unit is the unit for a metric.
 type Unit string
 
+// Units
 const (
 	// None is a not-yet documented unit.
 	None           Unit = ""
@@ -39,6 +40,7 @@ const (
 	Alert               = "alerts"
 	Abort               = "aborts"
 	Bool                = "bool"
+	Bits                = "bits"
 	BitsPerSecond       = "bits per second"
 	Bytes               = "bytes"
 	BytesPerSecond      = "bytes per second"
